@@ -1,0 +1,102 @@
+/*
+ * Copyright (c) 2021  New Vision Data @ https://newvisiondata.com
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import java.text.SimpleDateFormat
+
+
+/**
+ * ext.APP_NAME must be defined before to apply this plugin
+ * To import thi file use:
+ *   apply from: "$rootDir\\app\\generate_apk_info.gradle"
+ * */
+
+android.defaultConfig {
+    archivesBaseName = "${APP_NAME}-${android.defaultConfig.versionName}"
+}
+
+android.applicationVariants.all { variant ->
+    variant.outputs.all { output ->
+        outputFileName = new File(getApkName(variant))
+
+        variant.getAssembleProvider().configure() {
+            it.doLast {
+                generateVersion(variant, output, $APP_NAME)
+            }
+        }
+        generateVersion(variant, output, $APP_NAME)
+    }
+}
+
+ext.generateVersion = { final variant, final output, final appName ->
+    def applicationId = variant.applicationId
+    def minSdkVersion = android.defaultConfig.minSdkVersion.mApiLevel
+    def targetSdkVersion = android.defaultConfig.targetSdkVersion.mApiLevel
+    def flavor = ""
+    def buildType = variant.buildType.name
+    def versionName = variant.versionName
+    def versionCode = variant.versionCode
+    def datetime = currentDateTime()
+
+    def outputPath = "$buildDir${File.separator}outputs${File.separator}apk${File.separator}$buildType"
+    def outputPathApk = "${outputPath}${File.separator}${output.outputFileName}"
+    def fileOutputApk = new File(outputPathApk)
+
+    def sha512Hash = ""
+    if (fileOutputApk.exists()) {
+        ant.checksum(file: outputPathApk, algorithm: "SHA-512")
+        sha512Hash = (new File(outputPathApk + ".SHA-512")).getText('UTF-8').trim()
+    }
+
+    def versionFileName = "apk_info_${buildType}.apk.txt"
+
+    new File(versionFileName).text = """APPLICATION_ID=$applicationId
+APPLICATION_NAME=$appName
+APK_FILE_DIR=$outputPath
+APK_FILE_DIR_APK=$outputPathApk
+APK_NAME=${output.outputFileName}
+BUILD_TYPE=$buildType
+BUILD_DATE=$datetime
+VERSION_NAME=$versionName
+VERSION_CODE=$versionCode
+FLAVOR="$flavor"
+MIN_SDK_VERSION=$minSdkVersion
+TARGET_SDK_VERSION=$targetSdkVersion
+SHA_512=$sha512Hash
+APK_GENERATED=${fileOutputApk.exists()}
+"""
+}
+
+ext.getApkName = { variant ->
+    def SEP = "-"
+    def project = "$APP_NAME".replaceAll("[^a-zA-Z0-9]+", "")
+    def buildType = variant.buildType.name
+    def versionName = variant.versionName
+    def date = currentDate()
+
+    return project + SEP + versionName + SEP + buildType + SEP + date + ".apk"
+}
+
+ext.currentDate = { ->
+    def df = new SimpleDateFormat("yyyy-MM-dd")
+    df.setTimeZone(TimeZone.getTimeZone("UTC"))
+    return df.format(new Date())
+}
+
+ext.currentDateTime = { ->
+    def df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+    df.setTimeZone(TimeZone.getTimeZone("UTC"))
+    return df.format(new Date())
+}
