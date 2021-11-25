@@ -1,0 +1,44 @@
+class GreetingPlugin implements Plugin<Project> {
+    void apply(Project project) {
+        project.task('hello') {
+            doLast {
+                println 'Hello NVD'
+            }
+        }
+    }
+
+    static def getApkName(final variant) {
+        def SEP = "-"
+        def project = android.defaultConfig.versionName
+//        def buildType = variant.buildType.name
+//        def versionName = variant.versionName
+//        def date = currentDate()
+//        return project + SEP + versionName + SEP + buildType + SEP + date + ".apk"
+    }
+
+}
+
+// Apply the plugin
+apply plugin: GreetingPlugin
+
+/*
+plugins {
+    id 'groovy'
+}
+
+group 'com.newvisiondata'
+version '0.1-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.codehaus.groovy:groovy-all:3.0.5'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+}
+
+test {
+    useJUnitPlatform()
+}*/
